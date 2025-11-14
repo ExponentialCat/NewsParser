@@ -61,6 +61,7 @@ class FAISSStore(VectorStore):
                          "title": r[0].metadata["title"],
                          "summary": r[0].metadata["summary"],
                          "topics": r[0].metadata["topics"],
+                         "url": r[0].metadata["url"]
                      }
                      for r in results
                  ]

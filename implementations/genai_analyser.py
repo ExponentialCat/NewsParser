@@ -86,7 +86,7 @@ class GenAIAnalyzer(Analyzer):
             logging.info("Performing RAG search.")
             results = store.search(query, k)
 
-            context = "\n\n".join([f"{result['title']}: {result['summary']}\nTopics: {result['topics']}" for i, result in enumerate(results)])
+            context = "\n\n".join([f"{result['title']}: {result['summary']}\nTopics: {result['topics']}\nURL: {result['url']}" for i, result in enumerate(results)])
 
             prompt = f"""
                     Based on the following news, please choose the one that best answers the query below.

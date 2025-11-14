@@ -51,7 +51,7 @@ class ChromaStore(VectorStore):
             embeddings = self.embedding_model.embed_documents([doc.page_content for doc in documents])
             texts = [doc.page_content for doc in documents]
             metadatas = [{"title": doc.metadata["title"], "topics": ", ".join(doc.metadata["topics"]),
-                          "summary": doc.metadata["summary"]} for doc in documents]
+                          "summary": doc.metadata["summary"], "url": doc.metadata["url"]} for doc in documents]
             ids = [str(uuid4()) for _ in documents]
 
             self.collection.add(

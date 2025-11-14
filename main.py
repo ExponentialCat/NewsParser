@@ -106,7 +106,7 @@ def main():
                 if not summary or not topics:
                     logging.warning(f"Analysis failed for {url}: summary={summary}, topics={topics}")
                     continue
-                document = document_creator.create_document(title, summary, topics, text)
+                document = document_creator.create_document(title, summary, topics, text, url)
                 documents.append(document)
                 logging.info(f"Document created for {url}: title={title}")
             except Exception as e:
@@ -138,7 +138,6 @@ def main():
             query = augmented_query
         else:
             logging.info("No history found. Falling back to RAG search.")
-            args.search = 'rag'
 
     if args.search == "basic":
         logging.info("Performing basic search for query: %s", query)
@@ -152,6 +151,7 @@ def main():
                 best_result_str = (
                     f"Best Result:\n"
                     f"Title: {best_result['title'].encode('utf-8', errors='replace').decode('utf-8')}\n"
+                    f"URL: {best_result.get('url', 'N/A').encode('utf-8', errors='replace').decode('utf-8')}\n"
                     f"Summary: {best_result['summary'].encode('utf-8', errors='replace').decode('utf-8')}\n"
                     f"Topics: {topics.encode('utf-8', errors='replace').decode('utf-8')}"
                 )
@@ -161,6 +161,7 @@ def main():
                     other_results = [
                         f"Result {i + 1}:\n"
                         f"Title: {result['title'].encode('utf-8', errors='replace').decode('utf-8')}\n"
+                        f"URL: {result.get('url', 'N/A').encode('utf-8', errors='replace').decode('utf-8')}\n"
                         f"Summary: {result['summary'].encode('utf-8', errors='replace').decode('utf-8')}\n"
                         f"Topics: {', '.join(result['topics']) if isinstance(result['topics'], list) else result['topics']}"
                         for i, result in enumerate(results[1:])
