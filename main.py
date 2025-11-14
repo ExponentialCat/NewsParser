@@ -1,7 +1,6 @@
 import logging
 
 from implementations.basic_document_creator import BasicDocumentCreator
-from implementations.stores.chroma_store import ChromaStore
 from implementations.stores.faiss_store import FAISSStore
 from implementations.genai_analyser import GenAIAnalyzer
 from implementations.html_content_extractor import HTMLContentExtractor

@@ -1,5 +1,13 @@
 /app.log
 .venv/
+venv/
+.env/
+ENV/
+env/
+
 .idea/
 *.iml
+
 __pycache__/
+*.py[cod]
+*$py.class
