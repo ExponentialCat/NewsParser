@@ -20,11 +20,14 @@ class FAISSStore(VectorStore):
             logging.info("Building FAISS index...")
 
             self.index = FAISS.from_documents(documents=documents, embedding=self.embedding_model)
-            #self.save_index()
+            self.save_index()
 
             logging.info("FAISS index successfully built.")
         except Exception as e:
             logging.error(f"Error building FAISS index: {str(e)}")
+
+    def index_exists(self) -> bool:
+        return self.index is not None
 
     def save_index(self) -> None:
         if self.index is not None:
@@ -39,7 +42,7 @@ class FAISSStore(VectorStore):
     def load_index(self) -> None:
         if os.path.exists(self.index_path):
             try:
-                self.index = FAISS.load_local(self.index_path)
+                self.index = FAISS.load_local(self.index_path, embeddings=self.embedding_model, allow_dangerous_deserialization=True)
                 logging.info(f"Index loaded from {self.index_path}")
             except Exception as e:
                 logging.error(f"Error loading FAISS index: {str(e)}")

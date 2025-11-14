@@ -9,11 +9,7 @@ class VectorStore(ABC):
         pass
 
     @abstractmethod
-    def save_index(self) -> None:
-        pass
-
-    @abstractmethod
-    def load_index(self) -> None:
+    def index_exists(self) -> bool:
         pass
 
     @abstractmethod
