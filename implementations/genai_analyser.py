@@ -71,8 +71,8 @@ class GenAIAnalyzer(Analyzer):
             return "Error", [], f"Failed to parse JSON from the model response: {e}"
 
         except openai.error.OpenAIError as e:
-            logging.error("OpenAI API error: %s", e)
-            return "Error", [], f"OpenAI API error: {e}"
+            logging.error("GenAI API error: %s", e)
+            return "Error", [], f"GenAI API error: {e}"
 
         except Exception as e:
             logging.error("Unexpected error: %s", e)
@@ -105,7 +105,7 @@ class GenAIAnalyzer(Analyzer):
                 max_tokens=300
             )
             answer_text = completion.choices[0].message.content.strip()
-            logging.info("Received response from OpenAI.")
+            logging.info("Received response from GenAI.")
         except Exception as e:
             logging.error("Unexpected error: %s", e)
             return f"Unexpected RAG error: {e}"

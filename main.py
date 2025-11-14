@@ -27,11 +27,14 @@ def main():
                         help="Index type to use (FAISS or Chroma)")
     parser.add_argument('--rebuild', action='store_true',
                         help="Force rebuild of the index")
+    parser.add_argument('--search', choices=['basic', 'rag'], default='basic',
+                        help="Search type: 'basic' for direct search, 'rag' for RAG-based search")
+    parser.add_argument('--query', type=str, default="",
+                        help="Search query for basic or RAG search")
 
     args = parser.parse_args()
     setup_logging(args.logging)
 
-    # Инициализация компонентов
     urls = load_urls_from_file("urls.txt")
     if not urls:
         logging.error("No URLs found in urls.txt. Exiting.")
@@ -93,16 +96,48 @@ def main():
     else:
         logging.info("Index exists, using existing index.")
 
-    query = "young"
-    logging.info("Searching for query: %s", query)
-    try:
-        results = store.search(query)
-        if results:
-            logging.info("Search results: %s", results)
-        else:
-            logging.info("No results found.")
-    except Exception as e:
-        logging.error(f"Search failed: {str(e)}")
+    query = args.query
+    if args.search == "basic":
+        logging.info("Performing basic search for query: %s", query)
+        try:
+            results = store.search(query)
+            if results:
+                best_result = results[0]
+                topics = best_result['topics']
+                if isinstance(topics, list):
+                    topics = ", ".join(topics)
+                best_result_str = (
+                    f"Best Result:\n"
+                    f"Title: {best_result['title'].encode('utf-8', errors='replace').decode('utf-8')}\n"
+                    f"Summary: {best_result['summary'].encode('utf-8', errors='replace').decode('utf-8')}\n"
+                    f"Topics: {topics.encode('utf-8', errors='replace').decode('utf-8')}"
+                )
+
+                # Форматируем остальные результаты, если есть
+                other_results_str = ""
+                if len(results) > 1:
+                    other_results = [
+                        f"Result {i + 1}:\n"
+                        f"Title: {result['title'].encode('utf-8', errors='replace').decode('utf-8')}\n"
+                        f"Summary: {result['summary'].encode('utf-8', errors='replace').decode('utf-8')}\n"
+                        f"Topics: {', '.join(result['topics']) if isinstance(result['topics'], list) else result['topics']}"
+                        for i, result in enumerate(results[1:])
+                    ]
+                    other_results_str = "\n\n" + "\n\n".join(other_results)
+
+                formatted_results = best_result_str + other_results_str
+                logging.info("Basic search results:\n%s", formatted_results)
+            else:
+                logging.info("No results found for basic search.")
+        except Exception as e:
+            logging.error(f"Basic search failed: {str(e)}")
+    else:
+        logging.info("Performing RAG search for query: %s", query)
+        try:
+            result = analyzer.perform_rag_search(store, query)
+            logging.info("RAG search result: %s", result)
+        except Exception as e:
+            logging.error(f"RAG search failed: {str(e)}")
 
 if __name__ == "__main__":
     main()
