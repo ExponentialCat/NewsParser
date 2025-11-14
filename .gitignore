@@ -14,3 +14,4 @@ __pycache__/
 
 chroma_index/
 faiss_index/
+/search_history.json

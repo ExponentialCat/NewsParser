@@ -111,3 +111,35 @@ class GenAIAnalyzer(Analyzer):
             return f"Unexpected RAG error: {e}"
 
         return answer_text
+
+    def augment_query_with_history(self, history_queries, original_query):
+        logging.info("Augmenting query with history: original_query='%s', history_count=%d",
+                     original_query, len(history_queries))
+
+        try:
+            if not history_queries:
+                logging.info("No history queries provided. Returning original query.")
+                return original_query
+
+            history_str = " ".join(history_queries)
+            logging.info("History string for augmentation: '%s'", history_str)
+
+            prompt = f"Enhance the query '{original_query}' based on history: {history_str}. Make it more contextual and send only the enhanced query"
+            logging.info("Sending prompt: '%s'", prompt)
+
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3,
+                max_tokens=300
+            )
+
+            augmented = response.choices[0].message.content.strip()
+            logging.info("Augmented query received: '%s'", augmented)
+
+            return augmented
+
+        except Exception as e:
+            logging.error("Failed to augment query: %s", str(e))
+            logging.info("Falling back to original query: '%s'", original_query)
+            return original_query

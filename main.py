@@ -1,5 +1,7 @@
 import logging
 import argparse
+import json
+import datetime
 from implementations.basic_document_creator import BasicDocumentCreator
 from implementations.stores.chroma_store import ChromaStore
 from implementations.stores.faiss_store import FAISSStore
@@ -20,6 +22,26 @@ def setup_logging(enable_logging=True):
     else:
         logging.disable(logging.CRITICAL)
 
+def load_history(history_file, max_history=5):
+    try:
+        with open(history_file, 'r') as f:
+            history = json.load(f)
+        return history[-max_history:]  # Лимит на последние N
+    except FileNotFoundError:
+        return []
+    except json.JSONDecodeError:
+        logging.warning("Invalid history file format. Starting fresh.")
+        return []
+
+def save_history(history_file, query):
+    history = load_history(history_file)
+    history.append({
+        'timestamp': datetime.datetime.now().isoformat(),
+        'query': query
+    })
+    with open(history_file, 'w') as f:
+        json.dump(history, f, indent=4)
+
 def main():
     parser = argparse.ArgumentParser(description="Choose options for the search and indexing process.")
     parser.add_argument('--logging', action='store_true', help="Enable logging")
@@ -27,13 +49,21 @@ def main():
                         help="Index type to use (FAISS or Chroma)")
     parser.add_argument('--rebuild', action='store_true',
                         help="Force rebuild of the index")
-    parser.add_argument('--search', choices=['basic', 'rag'], default='basic',
-                        help="Search type: 'basic' for direct search, 'rag' for RAG-based search")
+    parser.add_argument('--search', choices=['basic', 'rag', 'contextual'], default='basic',
+                        help="Search type: 'basic' for direct search, 'rag' for RAG-based search, 'contextual' for history-based augmentation")
     parser.add_argument('--query', type=str, default="",
                         help="Search query for basic or RAG search")
+    parser.add_argument('--history_file', type=str, default="search_history.json",
+                        help="File to store search history (for contextual mode)")
+    parser.add_argument('--max_history', type=int, default=5,
+                        help="Max number of history entries to use (for contextual mode)")
 
     args = parser.parse_args()
     setup_logging(args.logging)
+
+    if not args.query:
+        logging.info("No query provided. Exiting.")
+        return
 
     urls = load_urls_from_file("urls.txt")
     if not urls:
@@ -97,6 +127,19 @@ def main():
         logging.info("Index exists, using existing index.")
 
     query = args.query
+
+    if args.search == 'contextual':
+        logging.info("Contextual mode: Loading search history...")
+        history = load_history(args.history_file, args.max_history)
+        if history:
+            history_queries = [entry['query'] for entry in history]
+            augmented_query = analyzer.augment_query_with_history(history_queries, query)
+            logging.info(f"Augmented query: {augmented_query}")
+            query = augmented_query
+        else:
+            logging.info("No history found. Falling back to RAG search.")
+            args.search = 'rag'
+
     if args.search == "basic":
         logging.info("Performing basic search for query: %s", query)
         try:
@@ -113,7 +156,6 @@ def main():
                     f"Topics: {topics.encode('utf-8', errors='replace').decode('utf-8')}"
                 )
 
-                # Форматируем остальные результаты, если есть
                 other_results_str = ""
                 if len(results) > 1:
                     other_results = [
@@ -138,6 +180,9 @@ def main():
             logging.info("RAG search result: %s", result)
         except Exception as e:
             logging.error(f"RAG search failed: {str(e)}")
+
+    if args.search in ['rag', 'contextual']:
+        save_history(args.history_file, args.query)
 
 if __name__ == "__main__":
     main()
