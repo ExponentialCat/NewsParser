@@ -57,7 +57,7 @@ class GenAIAnalyzer(Analyzer):
             answer_text = completion.choices[0].message.content.strip()
             logging.info("Received response from GenAI.")
 
-            json_text = extract_json(answer_text)  # Очищаем текст, если есть лишние символы
+            json_text = extract_json(answer_text)
             result = json.loads(json_text)
 
             summary = result.get("summary", "")
